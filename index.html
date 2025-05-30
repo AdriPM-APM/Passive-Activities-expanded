@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ejercicio de Voz Pasiva</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Un gris claro para el fondo */
+            color: #334155; /* Texto oscuro para contraste */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Alinea al inicio para que el contenido no se pegue al centro verticalmente */
+            min-height: 100vh;
+            padding: 2rem 1rem; /* Espaciado general */
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff; /* Fondo blanco para el contenedor principal */
+            border-radius: 1.5rem; /* Bordes más redondeados */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Sombra más pronunciada */
+            padding: 2.5rem;
+            max-width: 800px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem; /* Espacio entre secciones */
+        }
+        .question-card {
+            background-color: #f8fafc; /* Fondo ligeramente diferente para las tarjetas de preguntas */
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0; /* Borde sutil */
+        }
+        .option-label {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            border: 1px solid #cbd5e1; /* Borde para las opciones */
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .option-label:hover {
+            background-color: #e0f2fe; /* Fondo al pasar el ratón */
+            border-color: #93c5fd; /* Borde al pasar el ratón */
+        }
+        .option-label input[type="radio"] {
+            margin-right: 0.75rem;
+            accent-color: #2563eb; /* Color del radio button */
+        }
+        .submit-button {
+            background-color: #2563eb; /* Azul primario */
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3); /* Sombra para el botón */
+            width: fit-content; /* Ajusta el ancho al contenido */
+            margin: 0 auto; /* Centra el botón */
+        }
+        .submit-button:hover {
+            background-color: #1e40af; /* Azul más oscuro al pasar el ratón */
+            transform: translateY(-2px); /* Ligero efecto de elevación */
+        }
+        .loading-bar-container {
+            background-color: #e2e8f0;
+            border-radius: 0.5rem;
+            height: 1rem;
+            overflow: hidden;
+            margin-top: 1rem;
+            display: none; /* Oculto por defecto */
+        }
+        .loading-bar {
+            width: 0%;
+            height: 100%;
+            background-color: #2563eb;
+            border-radius: 0.5rem;
+            transition: width 0.3s ease-in-out;
+        }
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+        .modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            text-align: center;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transform: translateY(-20px);
+            transition: transform 0.3s ease-in-out;
+        }
+        .modal.show .modal-content {
+            transform: translateY(0);
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        .modal-button {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .modal-button.primary {
+            background-color: #2563eb;
+            color: white;
+        }
+        .modal-button.primary:hover {
+            background-color: #1e40af;
+        }
+        .modal-button.secondary {
+            background-color: #e2e8f0;
+            color: #475569;
+        }
+        .modal-button.secondary:hover {
+            background-color: #cbd5e1;
+        }
+        .results-section {
+            display: none; /* Oculto por defecto */
+            margin-top: 2rem;
+            padding: 2rem;
+            background-color: #f0f9ff; /* Azul muy claro para los resultados */
+            border-radius: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        .result-item {
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-radius: 0.75rem;
+            border: 1px solid #e0f2fe;
+            background-color: #ffffff;
+        }
+        .result-item.correct {
+            border-color: #34d399; /* Verde para correcto */
+            background-color: #ecfdf5; /* Fondo verde claro */
+        }
+        .result-item.incorrect {
+            border-color: #ef4444; /* Rojo para incorrecto */
+            background-color: #fef2f2; /* Fondo rojo claro */
+        }
+        .result-item p {
+            margin-bottom: 0.5rem;
+        }
+        .result-item .correct-answer {
+            font-weight: 600;
+            color: #22c55e; /* Verde más oscuro */
+        }
+        .result-item .your-answer {
+            font-style: italic;
+            color: #64748b; /* Gris para la respuesta del usuario */
+        }
+        .result-item.incorrect .your-answer {
+            color: #dc2626; /* Rojo para respuesta incorrecta del usuario */
+        }
+        .input-text {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #cbd5e1;
+            margin-top: 0.5rem;
+            font-size: 1rem;
+            color: #334155;
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .input-text:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-4xl font-bold text-center text-blue-700 mb-6">Ejercicio de Voz Pasiva</h1>
+        <p class="text-lg text-center mb-8">
+            Instrucciones: Realiza las siguientes actividades sobre la voz pasiva.
+            Completa los espacios o elige la opción correcta según se indique.
+        </p>
+
+        <form id="exerciseForm">
+            <div id="questions-container" class="space-y-6"></div>
+
+            <button type="submit" id="submitButton" class="submit-button mt-10">Enviar respuestas</button>
+        </form>
+
+        <div id="loadingBarContainer" class="loading-bar-container">
+            <div id="loadingBar" class="loading-bar"></div>
+        </div>
+
+        <div id="incompleteModal" class="modal">
+            <div class="modal-content">
+                <h3 class="text-2xl font-semibold mb-4 text-red-600">¡Atención!</h3>
+                <p class="text-lg">Te quedan <span id="missingQuestionsCount" class="font-bold"></span> ejercicio/s sin responder.</p>
+                <p class="text-md mt-2">¿Quieres continuar y enviar tus respuestas incompletas? Esto afectará tu nota final.</p>
+                <div class="modal-buttons">
+                    <button id="continueButton" class="modal-button primary">Sí, continuar</button>
+                    <button id="goToMissingButton" class="modal-button secondary">No, ir a preguntas pendientes</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="resultsSection" class="results-section">
+            <h2 class="text-3xl font-bold text-center text-blue-700 mb-6">Resultados del Ejercicio</h2>
+            <p class="text-xl font-semibold text-center mb-8">Tu puntuación: <span id="scoreDisplay" class="text-green-600"></span></p>
+            <div id="answersReview" class="space-y-4">
+                </div>
+            <button id="restartButton" class="submit-button mt-10" onclick="location.reload()">Volver a empezar</button>
+        </div>
+    </div>
+
+    <script>
+        // Array de objetos que contiene todas las preguntas del ejercicio
+        const questions = [
+            {
+                id: 'q1',
+                exerciseTitle: 'Ejercicio 1: Pasa de Activa a Pasiva (Presente Simple)',
+                type: 'text',
+                question: 'Actividad 1: The gardener waters the flowers every morning.',
+                correctAnswer: 'The flowers are watered by the gardener every morning.'
+            },
+            {
+                id: 'q2',
+                exerciseTitle: 'Ejercicio 1: Pasa de Activa a Pasiva (Presente Simple)',
+                type: 'text',
+                question: 'Actividad 2: My sister cleans her room every day.',
+                correctAnswer: 'Her room is cleaned by my sister every day.'
+            },
+            {
+                id: 'q3',
+                exerciseTitle: 'Ejercicio 1: Pasa de Activa a Pasiva (Presente Simple)',
+                type: 'text',
+                question: 'Actividad 3: People often use smartphones for communication.',
+                correctAnswer: 'Smartphones are often used for communication.'
+            },
+            {
+                id: 'q4',
+                exerciseTitle: 'Ejercicio 1: Pasa de Activa a Pasiva (Presente Simple)',
+                type: 'text',
+                question: 'Actividad 4: The baker makes fresh bread every morning.',
+                correctAnswer: 'Fresh bread is made by the baker every morning.'
+            },
+            {
+                id: 'q5',
+                exerciseTitle: 'Ejercicio 1: Pasa de Activa a Pasiva (Presente Simple)',
+                type: 'text',
+                question: 'Actividad 5: Students read many books in this course.',
+                correctAnswer: 'Many books are read by students in this course.'
+            },
+            {
+                id: 'q6',
+                exerciseTitle: 'Ejercicio 1: Pasa de Activa a Pasiva (Presente Simple)',
+                type: 'text',
+                question: 'Actividad 6: The company produces cars.',
+                correctAnswer: 'Cars are produced by the company.'
+            },
+            {
+                id: 'q7',
+                exerciseTitle: 'Ejercicio 2: Pasa de Activa a Pasiva (Pasado Simple)',
+                type: 'text',
+                question: 'Actividad 1: The children broke the window.',
+                correctAnswer: 'The window was broken by the children.'
+            },
+            {
+                id: 'q8',
+                exerciseTitle: 'Ejercicio 2: Pasa de Activa a Pasiva (Pasado Simple)',
+                type: 'text',
+                question: 'Actividad 2: Columbus discovered America in 1492.',
+                correctAnswer: 'America was discovered by Columbus in 1492.'
+            },
+            {
+                id: 'q9',
+                exerciseTitle: 'Ejercicio 2: Pasa de Activa a Pasiva (Pasado Simple)',
+                type: 'text',
+                question: 'Actividad 3: Someone stole my bicycle last night.',
+                correctAnswer: 'My bicycle was stolen last night.'
+            },
+            {
+                id: 'q10',
+                exerciseTitle: 'Ejercicio 2: Pasa de Activa a Pasiva (Pasado Simple)',
+                type: 'text',
+                question: 'Actividad 4: They built this old castle centuries ago.',
+                correctAnswer: 'This old castle was built centuries ago.'
+            },
+            {
+                id: 'q11',
+                exerciseTitle: 'Ejercicio 2: Pasa de Activa a Pasiva (Pasado Simple)',
+                type: 'text',
+                question: 'Actividad 5: The strong wind blew down the old tree.',
+                correctAnswer: 'The old tree was blown down by the strong wind.'
+            },
+            {
+                id: 'q12',
+                exerciseTitle: 'Ejercicio 2: Pasa de Activa a Pasiva (Pasado Simple)',
+                type: 'text',
+                question: 'Actividad 6: The police arrested the suspect yesterday.',
+                correctAnswer: 'The suspect was arrested by the police yesterday.'
+            },
+            {
+                id: 'q13',
+                exerciseTitle: 'Ejercicio 3: Pasa de Activa a Pasiva (Futuro Simple)',
+                type: 'text',
+                question: 'Actividad 1: They will build a new school next year.',
+                correctAnswer: 'A new school will be built next year.'
+            },
+            {
+                id: 'q14',
+                exerciseTitle: 'Ejercicio 3: Pasa de Activa a Pasiva (Futuro Simple)',
+                type: 'text',
+                question: 'Actividad 2: The company will announce the results tomorrow.',
+                correctAnswer: 'The results will be announced by the company tomorrow.'
+            },
+            {
+                id: 'q15',
+                exerciseTitle: 'Ejercicio 3: Pasa de Activa a Pasiva (Futuro Simple)',
+                type: 'text',
+                question: 'Actividad 3: We will send the invitations next week.',
+                correctAnswer: 'The invitations will be sent next week.'
+            },
+            {
+                id: 'q16',
+                exerciseTitle: 'Ejercicio 3: Pasa de Activa a Pasiva (Futuro Simple)',
+                type: 'text',
+                question: 'Actividad 4: The government will implement new policies.',
+                correctAnswer: 'New policies will be implemented by the government.'
+            },
+            {
+                id: 'q17',
+                exerciseTitle: 'Ejercicio 3: Pasa de Activa a Pasiva (Futuro Simple)',
+                type: 'text',
+                question: 'Actividad 5: Someone will clean the office later.',
+                correctAnswer: 'The office will be cleaned later.'
+            },
+            {
+                id: 'q18',
+                exerciseTitle: 'Ejercicio 3: Pasa de Activa a Pasiva (Futuro Simple)',
+                type: 'text',
+                question: 'Actividad 6: The team will present the project on Monday.',
+                correctAnswer: 'The project will be presented by the team on Monday.'
+            },
+            {
+                id: 'q19',
+                exerciseTitle: 'Ejercicio 4: Pasa de Activa a Pasiva (Presente Continuo)',
+                type: 'text',
+                question: 'Actividad 1: The students are writing an essay.',
+                correctAnswer: 'An essay is being written by the students.'
+            },
+            {
+                id: 'q20',
+                exerciseTitle: 'Ejercicio 4: Pasa de Activa a Pasiva (Presente Continuo)',
+                type: 'text',
+                question: 'Actividad 2: The chef is preparing dinner.',
+                correctAnswer: 'Dinner is being prepared by the chef.'
+            },
+            {
+                id: 'q21',
+                exerciseTitle: 'Ejercicio 4: Pasa de Activa a Pasiva (Presente Continuo)',
+                type: 'text',
+                question: 'Actividad 3: They are painting the house.',
+                correctAnswer: 'The house is being painted.'
+            },
+            {
+                id: 'q22',
+                exerciseTitle: 'Ejercicio 4: Pasa de Activa a Pasiva (Presente Continuo)',
+                type: 'text',
+                question: 'Actividad 4: The teachers are grading the exams.',
+                correctAnswer: 'The exams are being graded by the teachers.'
+            },
+            {
+                id: 'q23',
+                exerciseTitle: 'Ejercicio 4: Pasa de Activa a Pasiva (Presente Continuo)',
+                type: 'text',
+                question: 'Actividad 5: Someone is fixing the computer.',
+                correctAnswer: 'The computer is being fixed.'
+            },
+            {
+                id: 'q24',
+                exerciseTitle: 'Ejercicio 4: Pasa de Activa a Pasiva (Presente Continuo)',
+                type: 'text',
+                question: 'Actividad 6: We are discussing an important issue.',
+                correctAnswer: 'An important issue is being discussed.'
+            },
+            {
+                id: 'q25',
+                exerciseTitle: 'Ejercicio 5: Pasa de Activa a Pasiva (Presente Perfecto)',
+                type: 'text',
+                question: 'Actividad 1: Someone has stolen my wallet.',
+                correctAnswer: 'My wallet has been stolen.'
+            },
+            {
+                id: 'q26',
+                exerciseTitle: 'Ejercicio 5: Pasa de Activa a Pasiva (Presente Perfecto)',
+                type: 'text',
+                question: 'Actividad 2: The police have arrested two suspects.',
+                correctAnswer: 'Two suspects have been arrested by the police.'
+            },
+            {
+                id: 'q27',
+                exerciseTitle: 'Ejercicio 5: Pasa de Activa a Pasiva (Presente Perfecto)',
+                type: 'text',
+                question: 'Actividad 3: The company has launched a new product.',
+                correctAnswer: 'A new product has been launched by the company.'
+            },
+            {
+                id: 'q28',
+                exerciseTitle: 'Ejercicio 5: Pasa de Activa a Pasiva (Presente Perfecto)',
+                type: 'text',
+                question: 'Actividad 4: They have finished the report.',
+                correctAnswer: 'The report has been finished.'
+            },
+            {
+                id: 'q29',
+                exerciseTitle: 'Ejercicio 5: Pasa de Activa a Pasiva (Presente Perfecto)',
+                type: 'text',
+                question: 'Actividad 5: Scientists have discovered a new planet.',
+                correctAnswer: 'A new planet has been discovered by scientists.'
+            },
+            {
+                id: 'q30',
+                exerciseTitle: 'Ejercicio 5: Pasa de Activa a Pasiva (Presente Perfecto)',
+                type: 'text',
+                question: 'Actividad 6: We have solved the problem.',
+                correctAnswer: 'The problem has been solved.'
+            },
+            {
+                id: 'q31',
+                exerciseTitle: 'Ejercicio 6: Identifica la Voz (Activa o Pasiva)',
+                type: 'radio',
+                question: 'Actividad 1: The book was read by many people. (¿Activa o Pasiva?)',
+                correctAnswer: 'Pasiva',
+                options: ['Activa', 'Pasiva']
+            },
+            {
+                id: 'q32',
+                exerciseTitle: 'Ejercicio 6: Identifica la Voz (Activa o Pasiva)',
+                type: 'radio',
+                question: 'Actividad 2: My brother painted this picture. (¿Activa o Pasiva?)',
+                correctAnswer: 'Activa',
+                options: ['Activa', 'Pasiva']
+            },
+            {
+                id: 'q33',
+                exerciseTitle: 'Ejercicio 6: Identifica la Voz (Activa o Pasiva)',
+                type: 'radio',
+                question: 'Actividad 3: The old car was repaired by the mechanic. (¿Activa o Pasiva?)',
+                correctAnswer: 'Pasiva',
+                options: ['Activa', 'Pasiva']
+            },
+            {
+                id: 'q34',
+                exerciseTitle: 'Ejercicio 6: Identifica la Voz (Activa o Pasiva)',
+                type: 'radio',
+                question: 'Actividad 4: She wrote a letter. (¿Activa o Pasiva?)',
+                correctAnswer: 'Activa',
+                options: ['Activa', 'Pasiva']
+            },
+            {
+                id: 'q35',
+                exerciseTitle: 'Ejercicio 6: Identifica la Voz (Activa o Pasiva)',
+                type: 'radio',
+                question: 'Actividad 5: The food is being prepared. (¿Activa o Pasiva?)',
+                correctAnswer: 'Pasiva',
+                options: ['Activa', 'Pasiva']
+            },
+            {
+                id: 'q36',
+                exerciseTitle: 'Ejercicio 6: Identifica la Voz (Activa o Pasiva)',
+                type: 'radio',
+                question: 'Actividad 6: They will win the game. (¿Activa o Pasiva?)',
+                correctAnswer: 'Activa',
+                options: ['Activa', 'Pasiva']
+            },
+            {
+                id: 'q37',
+                exerciseTitle: 'Ejercicio 6: Identifica la Voz (Activa o Pasiva)',
+                type: 'radio',
+                question: 'Actividad 7: A beautiful song was sung. (¿Activa o Pasiva?)',
+                correctAnswer: 'Pasiva',
+                options: ['Activa', 'Pasiva']
+            },
+            {
+                id: 'q38',
+                exerciseTitle: 'Ejercicio 6: Identifica la Voz (Activa o Pasiva)',
+                type: 'radio',
+                question: 'Actividad 8: He drives a red car. (¿Activa o Pasiva?)',
+                correctAnswer: 'Activa',
+                options: ['Activa', 'Pasiva']
+            },
+            {
+                id: 'q39',
+                exerciseTitle: 'Ejercicio 7: Completa con la Forma Correcta del Verbo (Voz Pasiva)',
+                type: 'text',
+                question: 'Actividad 1: The car _________ (repair) right now. (Presente Continuo)',
+                correctAnswer: 'The car is being repaired right now.'
+            },
+            {
+                id: 'q40',
+                exerciseTitle: 'Ejercicio 7: Completa con la Forma Correcta del Verbo (Voz Pasiva)',
+                type: 'text',
+                question: 'Actividad 2: The new rules _________ (implement) by the government. (Pasado Simple)',
+                correctAnswer: 'The new rules were implemented by the government.'
+            },
+            {
+                id: 'q41',
+                exerciseTitle: 'Ejercicio 7: Completa con la Forma Correcta del Verbo (Voz Pasiva)',
+                type: 'text',
+                question: 'Actividad 3: The package _________ (deliver) tomorrow. (Futuro Simple)',
+                correctAnswer: 'The package will be delivered tomorrow.'
+            },
+            {
+                id: 'q42',
+                exerciseTitle: 'Ejercicio 7: Completa con la Forma Correcta del Verbo (Voz Pasiva)',
+                type: 'text',
+                question: 'Actividad 4: The report _________ (write) by the manager. (Presente Perfecto)',
+                correctAnswer: 'The report has been written by the manager.'
+            },
+            {
+                id: 'q43',
+                exerciseTitle: 'Ejercicio 7: Completa con la Forma Correcta del Verbo (Voz Pasiva)',
+                type: 'text',
+                question: 'Actividad 5: Many languages _________ (speak) in Europe. (Presente Simple)',
+                correctAnswer: 'Many languages are spoken in Europe.'
+            },
+            {
+                id: 'q44',
+                exerciseTitle: 'Ejercicio 7: Completa con la Forma Correcta del Verbo (Voz Pasiva)',
+                type: 'text',
+                question: 'Actividad 6: The bridge _________ (destroy) in the storm. (Pasado Simple)',
+                correctAnswer: 'The bridge was destroyed in the storm.'
+            },
+            {
+                id: 'q45',
+                exerciseTitle: 'Ejercicio 7: Completa con la Forma Correcta del Verbo (Voz Pasiva)',
+                type: 'text',
+                question: 'Actividad 7: The email _________ (send) already. (Presente Perfecto)',
+                correctAnswer: 'The email has been sent already.'
+            },
+            {
+                id: 'q46',
+                exerciseTitle: 'Ejercicio 7: Completa con la Forma Correcta del Verbo (Voz Pasiva)',
+                type: 'text',
+                question: 'Actividad 8: Dinner _________ (cook) by my dad. (Presente Continuo)',
+                correctAnswer: 'Dinner is being cooked by my dad.'
+            },
+            {
+                id: 'q47',
+                exerciseTitle: 'Ejercicio 8: Reescribe Usando "by" (si es necesario y lógico)',
+                type: 'text',
+                question: 'Actividad 1: The letter was delivered. (Añade "by" si es lógico)',
+                correctAnswer: 'The letter was delivered by the postman.'
+            },
+            {
+                id: 'q48',
+                exerciseTitle: 'Ejercicio 8: Reescribe Usando "by" (si es necesario y lógico)',
+                type: 'text',
+                question: 'Actividad 2: The decision was made. (Añade "by" si es lógico)',
+                correctAnswer: 'The decision was made by the committee.'
+            },
+            {
+                id: 'q49',
+                exerciseTitle: 'Ejercicio 8: Reescribe Usando "by" (si es necesario y lógico)',
+                type: 'text',
+                question: 'Actividad 3: The painting was finished. (Añade "by" si es lógico)',
+                correctAnswer: 'The painting was finished by the artist.'
+            },
+            {
+                id: 'q50',
+                exerciseTitle: 'Ejercicio 8: Reescribe Usando "by" (si es necesario y lógico)',
+                type: 'text',
+                question: 'Actividad 4: The window was broken. (Añade "by" si es lógico)',
+                correctAnswer: 'The window was broken by the children.'
+            },
+            {
+                id: 'q51',
+                exerciseTitle: 'Ejercicio 8: Reescribe Usando "by" (si es necesario y lógico)',
+                type: 'text',
+                question: 'Actividad 5: The song was sung. (Añade "by" si es lógico)',
+                correctAnswer: 'The song was sung by the choir.'
+            },
+            {
+                id: 'q52',
+                exerciseTitle: 'Ejercicio 8: Reescribe Usando "by" (si es necesario y lógico)',
+                type: 'text',
+                question: 'Actividad 6: The car was stopped. (Añade "by" si es lógico)',
+                correctAnswer: 'The car was stopped by the police.'
+            },
+            {
+                id: 'q53',
+                exerciseTitle: 'Ejercicio 9: Elige la Forma Pasiva Correcta',
+                type: 'radio',
+                question: 'Actividad 1: The report (was written / wrote) last week.',
+                correctAnswer: 'was written',
+                options: ['was written', 'wrote']
+            },
+            {
+                id: 'q54',
+                exerciseTitle: 'Ejercicio 9: Elige la Forma Pasiva Correcta',
+                type: 'radio',
+                question: 'Actividad 2: English (is spoken / speaks) all over the world.',
+                correctAnswer: 'is spoken',
+                options: ['is spoken', 'speaks']
+            },
+            {
+                id: 'q55',
+                exerciseTitle: 'Ejercicio 9: Elige la Forma Pasiva Correcta',
+                type: 'radio',
+                question: 'Actividad 3: The new bridge (is building / is being built) now.',
+                correctAnswer: 'is being built',
+                options: ['is building', 'is being built']
+            },
+            {
+                id: 'q56',
+                exerciseTitle: 'Ejercicio 9: Elige la Forma Pasiva Correcta',
+                type: 'radio',
+                question: 'Actividad 4: The problem (has solved / has been solved) by the team.',
+                correctAnswer: 'has been solved',
+                options: ['has solved', 'has been solved']
+            },
+            {
+                id: 'q57',
+                exerciseTitle: 'Ejercicio 9: Elige la Forma Pasiva Correcta',
+                type: 'radio',
+                question: 'Actividad 5: The invitations (will send / will be sent) tomorrow.',
+                correctAnswer: 'will be sent',
+                options: ['will send', 'will be sent']
+            },
+            {
+                id: 'q58',
+                exerciseTitle: 'Ejercicio 9: Elige la Forma Pasiva Correcta',
+                type: 'radio',
+                question: 'Actividad 6: Delicious food (was prepared / prepared) for the party.',
+                correctAnswer: 'was prepared',
+                options: ['was prepared', 'prepared']
+            },
+            {
+                id: 'q59',
+                exerciseTitle: 'Ejercicio 10: Corrige el Error en la Voz Pasiva',
+                type: 'text',
+                question: 'Actividad 1: The cake was bake by my mom.',
+                correctAnswer: 'The cake was baked by my mom.'
+            },
+            {
+                id: 'q60',
+                exerciseTitle: 'Ejercicio 10: Corrige el Error en la Voz Pasiva',
+                type: 'text',
+                question: 'Actividad 2: The door is open by someone.',
+                correctAnswer: 'The door was opened by someone.'
+            },
+            {
+                id: 'q61',
+                exerciseTitle: 'Ejercicio 10: Corrige el Error en la Voz Pasiva',
+                type: 'text',
+                question: 'Actividad 3: Many trees were plant last month.',
+                correctAnswer: 'Many trees were planted last month.'
+            },
+            {
+                id: 'q62',
+                exerciseTitle: 'Ejercicio 10: Corrige el Error en la Voz Pasiva',
+                type: 'text',
+                question: 'Actividad 4: The letter has send.',
+                correctAnswer: 'The letter has been sent.'
+            },
+            {
+                id: 'q63',
+                exerciseTitle: 'Ejercicio 10: Corrige el Error en la Voz Pasiva',
+                type: 'text',
+                question: 'Actividad 5: The car is repair by the mechanic.',
+                correctAnswer: 'The car is being repaired by the mechanic.'
+            },
+            {
+                id: 'q64',
+                exerciseTitle: 'Ejercicio 10: Corrige el Error en la Voz Pasiva',
+                type: 'text',
+                question: 'Actividad 6: The news will announce soon.',
+                correctAnswer: 'The news will be announced soon.'
+            }
+        ];
+
+        // Elementos del DOM
+        const questionsContainer = document.getElementById('questions-container');
+        const submitButton = document.getElementById('submitButton');
+        const loadingBarContainer = document.getElementById('loadingBarContainer');
+        const loadingBar = document.getElementById('loadingBar');
+        const incompleteModal = document.getElementById('incompleteModal');
+        const missingQuestionsCount = document.getElementById('missingQuestionsCount');
+        const continueButton = document.getElementById('continueButton');
+        const goToMissingButton = document.getElementById('goToMissingButton');
+        const resultsSection = document.getElementById('resultsSection');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const answersReview = document.getElementById('answersReview');
+
+        // Función para renderizar las preguntas en el DOM
+        function renderQuestions() {
+            let currentExerciseTitle = '';
+            questions.forEach(q => {
+                // Si el título del ejercicio cambia, crea una nueva sección
+                if (q.exerciseTitle !== currentExerciseTitle) {
+                    currentExerciseTitle = q.exerciseTitle;
+                    const exerciseSection = document.createElement('div');
+                    exerciseSection.className = 'exercise-section mb-8';
+                    exerciseSection.innerHTML = `<h2 class="text-2xl font-semibold text-blue-600 mb-4">${q.exerciseTitle}</h2>`;
+                    questionsContainer.appendChild(exerciseSection);
+                }
+
+                const questionCard = document.createElement('div');
+                questionCard.id = `question-${q.id}`; // ID para poder desplazarse a ella
+                questionCard.className = 'question-card mb-4';
+
+                const questionText = document.createElement('p');
+                questionText.className = 'text-md font-medium mb-3';
+                questionText.textContent = q.question;
+                questionCard.appendChild(questionText);
+
+                if (q.type === 'text') {
+                    // Para preguntas de texto, un input de tipo texto
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.id = q.id;
+                    input.name = q.id; // Nombre único para cada input
+                    input.className = 'input-text';
+                    input.placeholder = 'Escribe tu respuesta aquí...';
+                    questionCard.appendChild(input);
+                } else if (q.type === 'radio') {
+                    // Para preguntas de radio, crea opciones de radio
+                    q.options.forEach((option, index) => {
+                        const label = document.createElement('label');
+                        label.className = 'option-label';
+                        label.htmlFor = `${q.id}-${index}`;
+
+                        const radio = document.createElement('input');
+                        radio.type = 'radio';
+                        radio.id = `${q.id}-${index}`;
+                        radio.name = q.id; // Mismo nombre para el grupo de radio buttons
+                        radio.value = option;
+                        label.appendChild(radio);
+
+                        const span = document.createElement('span');
+                        span.textContent = option;
+                        label.appendChild(span);
+
+                        questionCard.appendChild(label);
+                    });
+                }
+                questionsContainer.appendChild(questionCard);
+            });
+        }
+
+        // Función para limpiar y normalizar las respuestas (eliminar espacios extra, convertir a minúsculas)
+        function normalizeAnswer(answer) {
+            return answer.toLowerCase().trim().replace(/\s+/g, ' ');
+        }
+
+        // Función para verificar las respuestas
+        function checkAnswers(event) {
+            event.preventDefault(); // Evita el envío del formulario por defecto
+
+            const userAnswers = {};
+            const unansweredQuestions = [];
+
+            questions.forEach(q => {
+                let userAnswer = '';
+                if (q.type === 'text') {
+                    const input = document.getElementById(q.id);
+                    userAnswer = input ? input.value : '';
+                } else if (q.type === 'radio') {
+                    const selectedRadio = document.querySelector(`input[name="${q.id}"]:checked`);
+                    userAnswer = selectedRadio ? selectedRadio.value : '';
+                }
+
+                userAnswers[q.id] = userAnswer;
+
+                // Si la respuesta está vacía, añadir a la lista de no respondidas
+                if (userAnswer.trim() === '') {
+                    unansweredQuestions.push(q.id);
+                }
+            });
+
+            // Si hay preguntas sin responder, mostrar el modal
+            if (unansweredQuestions.length > 0) {
+                missingQuestionsCount.textContent = unansweredQuestions.length;
+                incompleteModal.classList.add('show');
+
+                // Configurar los botones del modal
+                continueButton.onclick = () => {
+                    incompleteModal.classList.remove('show');
+                    startLoadingAndShowResults(userAnswers, unansweredQuestions);
+                };
+                goToMissingButton.onclick = () => {
+                    incompleteModal.classList.remove('show');
+                    // Desplazarse a la primera pregunta no respondida
+                    if (unansweredQuestions.length > 0) {
+                        const firstMissingQuestionId = unansweredQuestions[0];
+                        document.getElementById(`question-${firstMissingQuestionId}`).scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        // Opcional: Resaltar la pregunta
+                        const missingElement = document.getElementById(`question-${firstMissingQuestionId}`);
+                        missingElement.style.border = '2px solid #ef4444'; // Borde rojo
+                        setTimeout(() => {
+                            missingElement.style.border = ''; // Quitar el borde después de un tiempo
+                        }, 2000);
+                    }
+                };
+            } else {
+                // Si todas las preguntas están respondidas, proceder directamente
+                startLoadingAndShowResults(userAnswers, unansweredQuestions);
+            }
+        }
+
+        // Función para iniciar la barra de carga y mostrar los resultados
+        function startLoadingAndShowResults(userAnswers, unansweredQuestions) {
+            submitButton.style.display = 'none'; // Oculta el botón
+            loadingBarContainer.style.display = 'block'; // Muestra la barra de carga
+
+            let width = 0;
+            const interval = setInterval(() => {
+                if (width >= 100) {
+                    clearInterval(interval);
+                    loadingBarContainer.style.display = 'none'; // Oculta la barra de carga
+                    displayResults(userAnswers, unansweredQuestions); // Muestra los resultados
+                } else {
+                    width += 5; // Incrementa el ancho de la barra
+                    loadingBar.style.width = width + '%';
+                }
+            }, 100); // Velocidad de la barra de carga
+        }
+
+        // Función para mostrar los resultados
+        function displayResults(userAnswers, unansweredQuestions) {
+            let score = 0;
+            answersReview.innerHTML = ''; // Limpia resultados anteriores
+
+            questions.forEach(q => {
+                const userAnswer = userAnswers[q.id];
+                // Normaliza ambas respuestas para una comparación más precisa, ignorando mayúsculas/minúsculas y espacios extra
+                const normalizedUserAnswer = normalizeAnswer(userAnswer);
+                const normalizedCorrectAnswer = normalizeAnswer(q.correctAnswer);
+
+                const isCorrect = normalizedUserAnswer === normalizedCorrectAnswer;
+
+                if (isCorrect) {
+                    score++;
+                }
+
+                const resultItem = document.createElement('div');
+                resultItem.className = `result-item ${isCorrect ? 'correct' : 'incorrect'}`;
+
+                let questionContent = `<p class="font-bold">${q.question}</p>`;
+                if (q.type === 'text') {
+                    questionContent += `<p class="your-answer">Tu respuesta: ${userAnswer || '<span class="text-red-500">No respondido</span>'}</p>`;
+                    questionContent += `<p class="correct-answer">Respuesta correcta: ${q.correctAnswer}</p>`;
+                } else if (q.type === 'radio') {
+                    questionContent += `<p class="your-answer">Tu elección: ${userAnswer || '<span class="text-red-500">No respondido</span>'}</p>`;
+                    questionContent += `<p class="correct-answer">Respuesta correcta: ${q.correctAnswer}</p>`;
+                }
+
+                resultItem.innerHTML = questionContent;
+                answersReview.appendChild(resultItem);
+            });
+
+            scoreDisplay.textContent = `${score} / ${questions.length}`;
+            resultsSection.style.display = 'block'; // Muestra la sección de resultados
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' }); // Desplazarse a los resultados
+        }
+
+        // Inicializar la aplicación cuando el DOM esté completamente cargado
+        document.addEventListener('DOMContentLoaded', () => {
+            renderQuestions(); // Renderiza todas las preguntas
+            submitButton.addEventListener('click', checkAnswers); // Asigna el evento al botón de enviar
+        });
+    </script>
+</body>
+</html>
